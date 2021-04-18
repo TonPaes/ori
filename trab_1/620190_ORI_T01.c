@@ -464,13 +464,35 @@ void criar_transacoes_index() {
 
 /* (Re)faz o índice secundário chaves_pix_index */
 void criar_chaves_pix_index() {
-    /* <<< COMPLETE AQUI A IMPLEMENTAÇÃO >>> */
-    printf(ERRO_NAO_IMPLEMENTADO, "criar_chaves_pix_index");
+    if (!chaves_pix_idx)
+        chaves_pix_idx = malloc(MAX_REGISTROS * 4 * sizeof(chaves_pix_index));
+    
+    if(!chaves_pix_idx) {
+        printf(ERRO_MEMORIA_INSUFICIENTE);
+        exit(1);
+    }
+
+    for (unsigned i=0, k=0; i < qtd_registros_clientes, k < qtd_chaves_pix; i++){
+        unsigned j=0;
+        
+        Cliente c =  recuperar_registro_cliente(i);
+
+        while (j < 4){
+            if (c.chaves_pix[j] != '\0'){
+                strcpy(chaves_pix_idx[k].chave_pix,c.chaves_pix[j]);
+                strcpy(chaves_pix_idx[k].pk_cliente,c.cpf);
+
+                k++;
+            }
+            j++;
+        }
+    }
+    qsort(chaves_pix_idx, qtd_chaves_pix, sizeof(chaves_pix_index), qsort_chaves_pix_index);
 }
 
 /* (Re)faz o índice secundário timestamp_cpf_origem_index */
 void criar_timestamp_cpf_origem_index() {
-    /* <<< COMPLETE AQUI A IMPLEMENTAÇÃO >>> */
+    
     printf(ERRO_NAO_IMPLEMENTADO, "criar_timestamp_cpf_origem_index");
 }
 
@@ -671,8 +693,7 @@ int qsort_transacoes_index(const void *a, const void *b) {
 
 /* Função de comparação entre chaves_pix_index */
 int qsort_chaves_pix_index(const void *a, const void *b) {
-    /* <<< COMPLETE AQUI A IMPLEMENTAÇÃO >>> */
-    printf(ERRO_NAO_IMPLEMENTADO, "qsort_chaves_pix_index");
+    return strcmp(( (chaves_pix_index *)a )->chave_pix, ( (chaves_pix_index*)b )->chave_pix);
 }
 
 /* Função de comparação entre timestamp_cpf_origem_index */
