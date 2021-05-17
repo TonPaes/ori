@@ -1,0 +1,117 @@
+-- OPERAÇÕES CONTEMPLADAS PELO CASO DE TESTE:
+-- ÁRVORE-B DE ORDEM 6
+-- COM ARQUIVO DE CLIENTES
+-- CADASTRO
+-- CADASTRO DE CHAVE PIX
+-- BUSCA DE CLIENTES POR CPF
+-- BUSCA DE CLIENTES POR CHAVE PIX
+-- LISTAGEM DE CLIENTES
+-- IMPRIMIR ARQUIVO CLIENTES
+-- IMPRIMIR ARQUIVO DE ÍNDICE DE CLIENTES
+-- IMPRIMIR ARQUIVO DE ÍNDICE DE CHAVES PIX
+
+\echo file ARQUIVO_CLIENTES
+66545678765;Maria Eugenia;12/04/1980;mariaeugenia@gmail.com;15998765645;0000000000.00;A97301660-afcb-4ea4-a5a6-7c3abe8b8fbb&C66545678765&N15998765645&Emariaeugenia@gmail.com;##################################################################################99876556782;Gabriel Augusto;04/05/1997;ga.augusto@gmail.com;15997675654;0000000000.00;C99876556782&Ega.augusto@gmail.com;#######################################################################################################################################44565434213;Geovana Santana;25/10/1994;ge.santana@gmail.com;16996543652;0000000000.00;Ege.santana@gmail.com&C44565434213;#######################################################################################################################################54654367865;Gustavo Almeida;19/11/1992;galmeida@gmail.com;14998786754;0000000000.00;N14998786754&Egalmeida@gmail.com;###########################################################################################################################################37567876542;Melissa Santos;13/04/1977;melissa@gmail.com;15998765435;0000000000.00;;#############################################################################################################################################################################14565436782;Melissa Pereira;19/09/1993;melissa@gmail.com;15997654738;0000000000.00;Emelissa@gmail.com&A4064b4e3-53ac-4469-a819-708177365752&C14565436782;#######################################################################################################23465784759;Jose Santos;03/07/1968;josesantos@gmail.com;14998786754;0000000000.00;;#############################################################################################################################################################################
+\echo index chaves_pix_idx
+00414565436782####################################1456543678214998786754####################################5465436786515998765645####################################665456787654064b4e3-53ac-4469-a819-708177365752###########14565436782##########################################################T******************005ga.augusto@gmail.com###########################99876556782galmeida@gmail.com#############################54654367865ge.santana@gmail.com###########################44565434213mariaeugenia@gmail.com#########################66545678765melissa@gmail.com##############################14565436782T******************00244565434213####################################4456543421399876556782####################################99876556782##############################################################################################################################################################################F000003001*********00266545678765####################################6654567876597301660-afcb-4ea4-a5a6-7c3abe8b8fbb###########66545678765##############################################################################################################################################################################T******************
+\echo index clientes_idx
+004145654367820005234657847590006375678765420004445654342130002###############T******************002665456787650000998765567820001#############################################T******************001546543678650003############################################################F000001************
+
+-- cadastrando chave ALEATÓRIA para o cliente C
+UPDATE clientes SET chaves_pix = array_append(chaves_pix, 'A') WHERE cpf = '44565434213';
+OK
+
+-- tentando cadastrar chaves PIX duplicadas
+UPDATE clientes SET chaves_pix = array_append(chaves_pix, 'A') WHERE cpf = '66545678765';
+ERRO: Chave PIX tipo A ja cadastrada para este usuario
+UPDATE clientes SET chaves_pix = array_append(chaves_pix, 'E') WHERE cpf = '44565434213';
+ERRO: Chave PIX tipo E ja cadastrada para este usuario
+UPDATE clientes SET chaves_pix = array_append(chaves_pix, 'N') WHERE cpf = '54654367865';
+ERRO: Chave PIX tipo N ja cadastrada para este usuario
+UPDATE clientes SET chaves_pix = array_append(chaves_pix, 'C') WHERE cpf = '66545678765';
+ERRO: Chave PIX tipo C ja cadastrada para este usuario
+UPDATE clientes SET chaves_pix = array_append(chaves_pix, 'E') WHERE cpf = '54654367865';
+ERRO: Chave PIX tipo E ja cadastrada para este usuario
+
+-- buscando usuários existentes pelo CPF
+SELECT * FROM clientes WHERE cpf = '14565436782';
+Nos percorridos: 2 0
+14565436782, Melissa Pereira, 19/09/1993, melissa@gmail.com, 15997654738, 0.00, {Emelissa@gmail.com, A4064b4e3-53ac-4469-a819-708177365752, C14565436782}
+SELECT * FROM clientes WHERE cpf = '23465784759';
+Nos percorridos: 2 0
+23465784759, Jose Santos, 03/07/1968, josesantos@gmail.com, 14998786754, 0.00, {}
+SELECT * FROM clientes WHERE cpf = '37567876542';
+Nos percorridos: 2 0
+37567876542, Melissa Santos, 13/04/1977, melissa@gmail.com, 15998765435, 0.00, {}
+SELECT * FROM clientes WHERE cpf = '44565434213';
+Nos percorridos: 2 0
+44565434213, Geovana Santana, 25/10/1994, ge.santana@gmail.com, 16996543652, 0.00, {Ege.santana@gmail.com, C44565434213, A94a9eddc-31dd-4857-a357-0e5d46c490db}
+SELECT * FROM clientes WHERE cpf = '54654367865';
+Nos percorridos: 2
+54654367865, Gustavo Almeida, 19/11/1992, galmeida@gmail.com, 14998786754, 0.00, {N14998786754, Egalmeida@gmail.com}
+SELECT * FROM clientes WHERE cpf = '66545678765';
+Nos percorridos: 2 1
+66545678765, Maria Eugenia, 12/04/1980, mariaeugenia@gmail.com, 15998765645, 0.00, {A97301660-afcb-4ea4-a5a6-7c3abe8b8fbb, C66545678765, N15998765645, Emariaeugenia@gmail.com}
+SELECT * FROM clientes WHERE cpf = '99876556782';
+Nos percorridos: 2 1
+99876556782, Gabriel Augusto, 04/05/1997, ga.augusto@gmail.com, 15997675654, 0.00, {C99876556782, Ega.augusto@gmail.com}
+
+-- buscando usuários inexistentes pelo CPF
+SELECT * FROM clientes WHERE cpf = '12565436782';
+Nos percorridos: 2 0
+ERRO: Registro nao encontrado
+SELECT * FROM clientes WHERE cpf = '75565434213';
+Nos percorridos: 2 1
+ERRO: Registro nao encontrado
+SELECT * FROM clientes WHERE cpf = '99976556782';
+Nos percorridos: 2 1
+ERRO: Registro nao encontrado
+
+-- buscando usuários existentes pela chave PIX
+SELECT * FROM clientes WHERE '97301660-afcb-4ea4-a5a6-7c3abe8b8fbb' = ANY (chaves_pix);
+Nos percorridos: 2 3
+Nos percorridos: 2 1
+66545678765, Maria Eugenia, 12/04/1980, mariaeugenia@gmail.com, 15998765645, 0.00, {A97301660-afcb-4ea4-a5a6-7c3abe8b8fbb, C66545678765, N15998765645, Emariaeugenia@gmail.com}
+SELECT * FROM clientes WHERE '4064b4e3-53ac-4469-a819-708177365752' = ANY (chaves_pix);
+Nos percorridos: 2 0
+Nos percorridos: 2 0
+14565436782, Melissa Pereira, 19/09/1993, melissa@gmail.com, 15997654738, 0.00, {Emelissa@gmail.com, A4064b4e3-53ac-4469-a819-708177365752, C14565436782}
+SELECT * FROM clientes WHERE '99876556782' = ANY (chaves_pix);
+Nos percorridos: 2
+Nos percorridos: 2 1
+99876556782, Gabriel Augusto, 04/05/1997, ga.augusto@gmail.com, 15997675654, 0.00, {C99876556782, Ega.augusto@gmail.com}
+SELECT * FROM clientes WHERE '66545678765' = ANY (chaves_pix);
+Nos percorridos: 2 3
+Nos percorridos: 2 1
+66545678765, Maria Eugenia, 12/04/1980, mariaeugenia@gmail.com, 15998765645, 0.00, {A97301660-afcb-4ea4-a5a6-7c3abe8b8fbb, C66545678765, N15998765645, Emariaeugenia@gmail.com}
+SELECT * FROM clientes WHERE 'ga.augusto@gmail.com' = ANY (chaves_pix);
+Nos percorridos: 2 1
+Nos percorridos: 2 1
+99876556782, Gabriel Augusto, 04/05/1997, ga.augusto@gmail.com, 15997675654, 0.00, {C99876556782, Ega.augusto@gmail.com}
+SELECT * FROM clientes WHERE 'mariaeugenia@gmail.com' = ANY (chaves_pix);
+Nos percorridos: 2 1
+Nos percorridos: 2 1
+66545678765, Maria Eugenia, 12/04/1980, mariaeugenia@gmail.com, 15998765645, 0.00, {A97301660-afcb-4ea4-a5a6-7c3abe8b8fbb, C66545678765, N15998765645, Emariaeugenia@gmail.com}
+SELECT * FROM clientes WHERE 'melissa@gmail.com' = ANY (chaves_pix);
+Nos percorridos: 2 1
+Nos percorridos: 2 0
+14565436782, Melissa Pereira, 19/09/1993, melissa@gmail.com, 15997654738, 0.00, {Emelissa@gmail.com, A4064b4e3-53ac-4469-a819-708177365752, C14565436782}
+
+-- buscando clientes por chaves PIX inexistentes ou não cadastradas
+SELECT * FROM clientes WHERE '6bbc4c97-55b7-48fa-9e43-b53d5ad37f8d' = ANY (chaves_pix);
+Nos percorridos: 2 3
+ERRO: Registro nao encontrado
+SELECT * FROM clientes WHERE 'josesantos@gmail.com' = ANY (chaves_pix);
+Nos percorridos: 2 1
+ERRO: Registro nao encontrado
+SELECT * FROM clientes WHERE '15998765435' = ANY (chaves_pix);
+Nos percorridos: 2 0
+ERRO: Registro nao encontrado
+SELECT * FROM clientes WHERE '54654367865' = ANY (chaves_pix);
+Nos percorridos: 2 3
+ERRO: Registro nao encontrado
+SELECT * FROM clientes WHERE '15997675654' = ANY (chaves_pix);
+Nos percorridos: 2 0
+ERRO: Registro nao encontrado
+
+\q
