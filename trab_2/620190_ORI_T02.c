@@ -93,7 +93,7 @@ typedef struct {
 /* Struct para um nó de Árvore-B */
 typedef struct {
     int this_rrn;
-    int qtd_chaves;
+    unsigned int qtd_chaves;
     char **chaves; // ponteiro para o começo do campo de chaves no arquivo de índice respectivo
     bool folha;
     int *filhos; // vetor de int para o RRN dos nós filhos (DEVE SER DESALOCADO APÓS O USO!!!)
@@ -762,11 +762,11 @@ Cliente recuperar_registro_cliente(int rrn) {
  * informado e retorna os dados na struct Transacao */
 Transacao recuperar_registro_transacao(int rrn) {
     Transacao t;
-    char temp[TAM_REGISTRO_TRANSACAO + 1], *p;
+    char temp[TAM_REGISTRO_TRANSACAO + 1];
     strncpy(temp, ARQUIVO_TRANSACOES + (rrn * TAM_REGISTRO_TRANSACAO), TAM_REGISTRO_TRANSACAO);
-    temp[TAM_ARQUIVO_TRANSACAO] = '\0';
+    temp[TAM_REGISTRO_TRANSACAO] = '\0';
     unsigned i = 0;
-    char* aux;
+    char* aux = temp;
  
     strncpy(t.cpf_origem, temp + i, 11);
     i += 11;
@@ -825,10 +825,10 @@ void escrever_registro_transacao(Transacao t, int rrn) {
 
 /* Funções principais */
 /* Funções principais */
-void cadastrar_cliente(char *cpf, char *nome, char *nascimento, char *email, char *celular) {
+void cadastrar_cliente_menu(char *cpf, char *nome, char *nascimento, char *email, char *celular) {
     Cliente c;
  
-    if (search_client_index(cpf) != NULL){
+    if (btree_search(NULL, false, cpf, clientes_idx.rrn_raiz, &clientes_idx)){
         printf(ERRO_PK_REPETIDA, cpf);
         return;
     }
@@ -841,10 +841,10 @@ void cadastrar_cliente(char *cpf, char *nome, char *nascimento, char *email, cha
  
     c.saldo = 0.0;
  
-    for(unsigned i; i< 4; i++)
+    for(unsigned i = 0; i< 4; i++)
         c.chaves_pix[i][0] = '\0';
  
-    inserir_registro_cliente(c);
+    escrever_registro_cliente(c, clientes_idx.qtd_nos);
     btree_insert(c.cpf, &clientes_idx);
  
     printf(SUCESSO);
@@ -972,17 +972,21 @@ void btree_insert(char *chave, btree *t) {
     }else {
         promovido_aux r_child = btree_insert_aux(chave, t->rrn_raiz, t);
 
+        if (r_child.filho_direito == -1){
+            aux_node.folha = 'F';
+            aux_node.qtd_chaves++;
+            aux_node.chaves[0] = r_child.chave_promovida;
+            aux_node.filhos[1] = r_child.filho_direito; 
+        }
     }
-
-
-    printf(ERRO_NAO_IMPLEMENTADO, "btree_insert");
+    btree_node_free(aux_node);
 }
 
 promovido_aux btree_insert_aux(char *chave, int rrn, btree *t) {
     int i=0;
     promovido_aux promo_aux_node;
     btree_node aux_node = btree_node_malloc(t);
-    char * search_result;
+    char * search_result = "0";
 
     btree_search(search_result, false, chave, t->rrn_raiz, t);
 
@@ -1000,11 +1004,14 @@ promovido_aux btree_insert_aux(char *chave, int rrn, btree *t) {
             btree_write(aux_node, t);
             
             promo_aux_node.filho_direito = -1;
-
+            
+            btree_node_free(aux_node);
             return promo_aux_node;
 
-        }else
+        }else{
+            btree_node_free(aux_node);
             return btree_divide(chave, btree_order/2, rrn, t);
+        }    
     }
     else{
         for (i = aux_node.qtd_chaves; i > 0 &&  0 < t->compar((void*)chave, (void*)aux_node.chaves[i]); i--);
@@ -1025,15 +1032,17 @@ promovido_aux btree_insert_aux(char *chave, int rrn, btree *t) {
                 btree_write(aux_node, t);
 
                 promo_aux_node.filho_direito = -1;
-
+                
+                btree_node_free(aux_node);
                 return promo_aux_node;
 
             }else{
+                btree_node_free(aux_node);
                 return btree_divide(promo_aux_node.chave_promovida, promo_aux_node.filho_direito, aux_node.this_rrn, t);
             }
         }else{
             promo_aux_node.filho_direito = -1;
-
+            btree_node_free(aux_node);
             return promo_aux_node;
         }
     }
@@ -1083,7 +1092,9 @@ promovido_aux btree_divide(char *chave, int filho_direito, int rrn, btree *t) {
 
     strcpy(promoted.chave_promovida, aux_node.chaves[i]);
     promoted.filho_direito = t->qtd_nos;
-
+    
+    btree_node_free(aux_node);
+    btree_node_free(new_node);
     return promoted;
 
 }
@@ -1093,14 +1104,18 @@ bool btree_search(char *result, bool exibir_caminho, char *chave, int rrn, btree
     btree_node aux_node =  btree_read(rrn, t);
 
     for (; aux_node.qtd_chaves && 0 < t->compar((void*)chave, (void*)aux_node.chaves[i]); i++)
-        if(exibir_btree_cliente)
+        if(exibir_caminho)
             printf("%d ", aux_node.this_rrn);
 
-    if (i <= aux_node.qtd_chaves && 0 == t->compar((void*)chave, (void*)aux_node.chaves[i]))
+    if (i <= aux_node.qtd_chaves && 0 == t->compar((void*)chave, (void*)aux_node.chaves[i])){
+        btree_node_free(aux_node);
         return true;
+    }
 
-    if (aux_node.folha)
-        return 0;
+    if (aux_node.folha){
+        btree_node_free(aux_node);
+        return false;
+    }
     else
         return btree_search( result, exibir_caminho, chave, aux_node.filhos[i], t);
 
@@ -1116,11 +1131,11 @@ btree_node btree_read(int rrn, btree *t) {
     char *p = t->arquivo + rrn;
 
     
-    fscanf(p, "%3d", aux_node.qtd_chaves);
+    sscanf(p, "%3d", aux_node.qtd_chaves);
     p += 3;
 
-    for (int i = 0; i < aux_node.qtd_chaves ; i++)
-        for (int j = 0; j < t->tam_chave; j++)
+    for (unsigned i = 0; i < aux_node.qtd_chaves ; i++)
+        for (unsigned j = 0; j < t->tam_chave; j++)
             if (*(p + (i*j)) != '#')
                 aux_node.chaves[i][j] = *(p + (i*j));
         
@@ -1133,7 +1148,7 @@ btree_node btree_read(int rrn, btree *t) {
     for (int i=0; i <= aux_node.qtd_chaves; i++)
         if (*p == '*')
             break;
-        fscanf(p, "%3d", aux_node.filhos);
+        sscanf(p, "%3d", aux_node.filhos);
         p+=3;
 
     aux_node.this_rrn = rrn;
@@ -1143,7 +1158,7 @@ btree_node btree_read(int rrn, btree *t) {
 }
 
 void btree_write(btree_node no, btree *t) {
-    int  i, j = 3, k = 0;
+    unsigned int  i, j = 3, k = 0;
 
     btree_node aux_node = btree_node_malloc(t);
     char *p = t->arquivo + no.this_rrn;
@@ -1160,7 +1175,7 @@ void btree_write(btree_node no, btree *t) {
 
         sprintf(p+j,"%s", no.chaves[i]);
         
-        j += len(no.chaves[i]); 
+        j += strlen(no.chaves[i]); 
 
         while ( j < (t->tam_chave - 1) * i){
             *(p+j) = '#';
@@ -1168,7 +1183,7 @@ void btree_write(btree_node no, btree *t) {
         }
 
         if (no.filhos[i] != -1){
-                sprintf(p+k, "%03", no.filhos[i]);
+                sprintf(p+k, "%03d", no.filhos[i]);
             }
             else
                 strncpy(p+k, "***" ,3);
@@ -1177,7 +1192,7 @@ void btree_write(btree_node no, btree *t) {
         if (i == no.qtd_chaves-1){
             i++;
             if (no.filhos[i] != -1){
-                sprintf(p+k, "%03", no.filhos[i]);
+                sprintf(p+k, "%03d", no.filhos[i]);
             }
             else
                 strncpy(p+k, "***", 3);
@@ -1187,7 +1202,7 @@ void btree_write(btree_node no, btree *t) {
 
     p[j] = no.folha;
 
-    
+    btree_node_free(aux_node);
 
 }
 
